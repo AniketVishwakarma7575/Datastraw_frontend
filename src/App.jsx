@@ -41,7 +41,11 @@ export default function App() {
   useEffect(() => {
     const onHashChange = () => setRoute(readRoute());
     window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
+    window.addEventListener("popstate", onHashChange);
+    return () => {
+      window.removeEventListener("hashchange", onHashChange);
+      window.removeEventListener("popstate", onHashChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -78,8 +82,8 @@ export default function App() {
 
   const navigate = useCallback((page, ticketId) => {
     const hash = page === "detail" ? `#/tickets/${encodeURIComponent(ticketId)}` : `#/${page}`;
-    if (window.location.hash === hash) setRoute(readRoute());
-    else window.location.hash = hash;
+    if (window.location.hash !== hash) window.history.pushState(null, "", hash);
+    setRoute(readRoute());
   }, []);
 
   async function handleCreateTicket(form) {
