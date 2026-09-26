@@ -1,14 +1,25 @@
 import Button from "../components/ui/Button.jsx";
 import Icon from "../components/ui/Icon.jsx";
 
-const stats = [
-  { label: "Total tickets", value: "128", trend: "+12.4% this month", tone: "up", icon: "ticket" },
-  { label: "Open", value: "42", trend: "18 need attention", tone: "open", icon: "circle" },
-  { label: "In progress", value: "27", trend: "8 updated today", tone: "progress", icon: "circle" },
-  { label: "Closed", value: "59", trend: "+14 this week", tone: "closed", icon: "circle" },
-];
+export default function Dashboard({ tickets, onCreateTicket }) {
+  const counts = tickets.reduce(
+    (result, ticket) => {
+      result.total += 1;
+      if (ticket.status === "Open") result.open += 1;
+      if (ticket.status === "In Progress") result.inProgress += 1;
+      if (ticket.status === "Closed") result.closed += 1;
+      return result;
+    },
+    { total: 0, open: 0, inProgress: 0, closed: 0 },
+  );
+  const stats = [
+    { label: "Total tickets", value: counts.total, trend: "Live ticket count", tone: "up", icon: "ticket" },
+    { label: "Open", value: counts.open, trend: `${counts.open} need attention`, tone: "open", icon: "circle" },
+    { label: "In progress", value: counts.inProgress, trend: "Being handled", tone: "progress", icon: "circle" },
+    { label: "Closed", value: counts.closed, trend: "Resolved tickets", tone: "closed", icon: "circle" },
+  ];
+  const recentTickets = tickets.slice(0, 3);
 
-export default function Dashboard({ onCreateTicket }) {
   return (
     <section>
       <div className="page-head">
@@ -44,22 +55,30 @@ export default function Dashboard({ onCreateTicket }) {
           <h2 className="panel-title">Support health</h2>
           <div className="health-row">
             <div className="donut">
-              <div className="donut-inner"><b>128</b><span>Tickets</span></div>
+              <div className="donut-inner"><b>{counts.total}</b><span>Tickets</span></div>
             </div>
             <div className="legend">
-              <div><span className="dot open-dot" />Open<b>42</b></div>
-              <div><span className="dot progress-dot" />In Progress<b>27</b></div>
-              <div><span className="dot closed-dot" />Closed<b>59</b></div>
+              <div><span className="dot open-dot" />Open<b>{counts.open}</b></div>
+              <div><span className="dot progress-dot" />In Progress<b>{counts.inProgress}</b></div>
+              <div><span className="dot closed-dot" />Closed<b>{counts.closed}</b></div>
             </div>
           </div>
-          <div className="queue-note"><b>Queue insight.</b> 18 tickets require attention. 8 tickets were updated today.</div>
+          <div className="queue-note"><b>Queue insight.</b> {counts.open} open tickets require attention.</div>
         </article>
         <article className="panel">
           <h2 className="panel-title">Recent activity</h2>
           <div className="timeline">
-            <div className="t-item"><div className="t-dot" /><div className="t-body"><b>Aniket Vishwakarma</b><div className="t-action">Changed TKT-024 to In Progress</div><div className="t-time">2 minutes ago</div></div></div>
-            <div className="t-item"><div className="t-dot" /><div className="t-body"><b>Priya Shah</b><div className="t-action">Created TKT-023</div><div className="t-time">18 minutes ago</div></div></div>
-            <div className="t-item"><div className="t-dot note-dot" /><div className="t-body"><b>Aniket Vishwakarma</b><div className="t-action">Added an internal note to TKT-019</div><div className="t-time">42 minutes ago</div></div></div>
+            {recentTickets.map((ticket) => (
+              <div className="t-item" key={ticket.id}>
+                <div className="t-dot" />
+                <div className="t-body">
+                  <b>{ticket.customer}</b>
+                  <div className="t-action">Created {ticket.id}</div>
+                  <div className="t-time">{ticket.created}</div>
+                </div>
+              </div>
+            ))}
+            {recentTickets.length === 0 && <p className="desc-text">No ticket activity yet.</p>}
           </div>
         </article>
       </div>
