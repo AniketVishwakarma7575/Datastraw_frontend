@@ -90,13 +90,18 @@ tr:focus-visible {
 
 .app {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .sidebar {
+  position: sticky;
+  top: 0;
   display: flex;
   width: 240px;
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
   flex: 0 0 240px;
   flex-direction: column;
   color: #cbd1e0;
@@ -220,12 +225,18 @@ tr:focus-visible {
 
 .main {
   display: flex;
+  height: 100vh;
   min-width: 0;
   flex: 1;
   flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   height: 60px;
   flex: 0 0 60px;
@@ -1134,11 +1145,36 @@ textarea:focus,
   max-width: 640px;
 }
 
+.settings-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.settings-card-link:hover,
+.settings-card-link:focus-visible {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm), 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+.settings-card-link:focus-visible {
+  outline: none;
+}
+
 .settings-profile {
   display: flex;
   align-items: center;
   gap: 12px;
   margin: 4px 0 18px;
+}
+
+.settings-profile > img {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .settings-profile > div:last-child {
@@ -1252,10 +1288,14 @@ textarea:focus,
 @media (max-width: 600px) {
   .app {
     display: block;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
   }
 
   .sidebar {
     position: relative;
+    top: auto;
     width: 100%;
     min-height: 0;
     height: auto;
@@ -1303,6 +1343,7 @@ textarea:focus,
   }
 
   .topbar {
+    position: static;
     height: 52px;
     flex-basis: 52px;
     padding: 0 14px;
@@ -1322,6 +1363,11 @@ textarea:focus,
 
   .content {
     padding: 24px 16px;
+  }
+
+  .main {
+    height: auto;
+    overflow: visible;
   }
 
   .page-head {

@@ -1,7 +1,25 @@
+import { useEffect, useState } from "react";
 import Button from "../components/ui/Button.jsx";
 import Icon from "../components/ui/Icon.jsx";
 
 export default function Dashboard({ tickets, onCreateTicket }) {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  const hour = now.getHours();
+  const greeting = hour < 5
+    ? "Good night"
+    : hour < 12
+      ? "Good morning"
+      : hour < 17
+        ? "Good afternoon"
+        : hour < 21
+          ? "Good evening"
+          : "Good night";
   const counts = tickets.reduce(
     (result, ticket) => {
       result.total += 1;
@@ -24,7 +42,7 @@ export default function Dashboard({ tickets, onCreateTicket }) {
     <section>
       <div className="page-head">
         <div>
-          <h1 className="page-title">Good evening, Aniket.</h1>
+          <h1 className="page-title">{greeting}, Aniket.</h1>
           <p className="page-sub">Here's the current state of your support workspace.</p>
         </div>
         <Button onClick={onCreateTicket}>
