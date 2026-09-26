@@ -1,39 +1,105 @@
-import { mockTickets } from "../data/mockTickets.js";
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace(/\/+$/, "");
 
-const STORAGE_KEY = "supportflow-tickets";
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...options.headers,
+    },
+  });
+  const payload = await response.json();
 
-function readTickets() {
-  try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored === null) {
-      return mockTickets.map((ticket) => ({ ...ticket, timeline: [...ticket.timeline] }));
-    }
-
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) {
-      throw new Error("Saved ticket data is invalid.");
-    }
-    return parsed;
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      throw new Error("Saved ticket data could not be read.", { cause: error });
-    }
-    throw error;
+  if (!response.ok || payload.success === false) {
+    throw new Error(payload.message || `Request failed with status ${response.status}.`);
   }
+
+  return payload.data;
 }
 
-function saveTickets(tickets) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets));
+function formatDate(value) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function normalizeTicket(ticket) {
+  return {
+    id: ticket.ticketId,
+    customer: ticket.customerName,
+    email: ticket.customerEmail,
+    subject: ticket.subject,
+    status: ticket.status,
+    created: formatDate(ticket.createdAt),
+    updated: formatDate(ticket.updatedAt),
+    desc: ticket.description,
+    timeline: [
+      {
+        actor: "System",
+        action: "Ticket created",
+        time: formatDate(ticket.createdAt),
+        type: "system",
+      },
+    ],
+  };
 }
 
 export async function getTickets() {
-  return readTickets();
+  const tickets = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const result = await request(`/tickets?page=${page}&limit=100`);
+    if (!result || !Array.isArray(result.tickets) || !result.pagination) {
+      throw new Error("The tickets API returned an invalid response.");
+    }
+
+    tickets.push(...result.tickets.map(normalizeTicket));
+    totalPages = Number(result.pagination.totalPages);
+    if (!Number.isInteger(totalPages) || totalPages < 0) {
+      throw new Error("The tickets API returned invalid pagination data.");
+    }
+    page += 1;
+  } while (page <= totalPages);
+
+  return tickets;
+}
+
+export async function getTicket(id) {
+  const [ticket, notes] = await Promise.all([
+    request(`/tickets/${encodeURIComponent(id)}`),
+    request(`/tickets/${encodeURIComponent(id)}/notes`),
+  ]);
+
+  if (!ticket || !Array.isArray(notes)) {
+    throw new Error("The ticket API returned an invalid response.");
+  }
+
+  const normalized = normalizeTicket(ticket);
+  normalized.timeline.push(
+    ...notes
+      .map((note) => ({
+        actor: "Aniket Vishwakarma",
+        action: "Added internal note",
+        content: note.noteText,
+        time: formatDate(note.createdAt),
+        type: "note",
+        createdAt: new Date(note.createdAt).getTime(),
+      }))
+      .sort((first, second) => first.createdAt - second.createdAt)
+      .map(({ createdAt, ...event }) => event),
+  );
+
+  return normalized;
 }
 
 export async function createTicket({ customer, email, subject, desc }) {
   const customerName = customer.trim() || "New customer";
   const customerEmail = email.trim() || "customer@example.com";
   const description = desc.trim() || "No description provided.";
+
   if (!subject.trim()) {
     throw new Error("Please add a subject before continuing.");
   }
@@ -41,51 +107,34 @@ export async function createTicket({ customer, email, subject, desc }) {
     throw new Error("Enter a valid customer email address.");
   }
 
-  const tickets = readTickets();
-  const nextNumber = Math.max(
-    24,
-    ...tickets.map((ticket) => Number(ticket.id.replace(/\D/g, "")) || 0),
-  ) + 1;
-  const id = `TKT-${String(nextNumber).padStart(3, "0")}`;
-  const ticket = {
-    id,
-    customer: customerName,
-    email: customerEmail,
-    subject: subject.trim(),
-    status: "Open",
-    updated: "Just now",
-    created: "Just now",
-    desc: description,
-    timeline: [{ actor: "System", action: "Ticket created", time: "Just now", type: "system" }],
-  };
+  const ticket = await request("/tickets", {
+    method: "POST",
+    body: JSON.stringify({
+      customerName,
+      customerEmail,
+      subject: subject.trim(),
+      description,
+    }),
+  });
 
-  saveTickets([ticket, ...tickets]);
-  return ticket;
+  if (!ticket) {
+    throw new Error("The ticket API did not return the created ticket.");
+  }
+
+  return normalizeTicket(ticket);
 }
 
 export async function updateTicketStatus(id, status) {
-  const tickets = readTickets();
-  const ticket = tickets.find((item) => item.id === id);
+  const ticket = await request(`/tickets/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify({ status }),
+  });
+
   if (!ticket) {
-    throw new Error("Ticket not found.");
+    throw new Error("The ticket API did not return the updated ticket.");
   }
 
-  const updatedTicket = {
-    ...ticket,
-    status,
-    updated: "Just now",
-    timeline: [
-      ...ticket.timeline,
-      {
-        actor: "Aniket Vishwakarma",
-        action: `Changed status to ${status}`,
-        time: "Just now",
-        type: "system",
-      },
-    ],
-  };
-  saveTickets(tickets.map((item) => (item.id === id ? updatedTicket : item)));
-  return updatedTicket;
+  return normalizeTicket(ticket);
 }
 
 export async function addTicketNote(id, noteText) {
@@ -94,26 +143,14 @@ export async function addTicketNote(id, noteText) {
     throw new Error("Add a note before saving.");
   }
 
-  const tickets = readTickets();
-  const ticket = tickets.find((item) => item.id === id);
-  if (!ticket) {
-    throw new Error("Ticket not found.");
+  const note = await request(`/tickets/${encodeURIComponent(id)}/notes`, {
+    method: "POST",
+    body: JSON.stringify({ noteText: value }),
+  });
+
+  if (!note) {
+    throw new Error("The notes API did not return the saved note.");
   }
 
-  const updatedTicket = {
-    ...ticket,
-    updated: "Just now",
-    timeline: [
-      ...ticket.timeline,
-      {
-        actor: "Aniket Vishwakarma",
-        action: "Added internal note",
-        content: value,
-        time: "Just now",
-        type: "note",
-      },
-    ],
-  };
-  saveTickets(tickets.map((item) => (item.id === id ? updatedTicket : item)));
-  return updatedTicket;
+  return note;
 }
