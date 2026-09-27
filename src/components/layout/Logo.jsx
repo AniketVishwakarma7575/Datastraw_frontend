@@ -2,21 +2,12 @@ export default function Logo() {
   return (
     <div className="brand">
       <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
-        <defs>
-          <linearGradient id="brand-gradient" x1="0" y1="0" x2="32" y2="32">
-            <stop offset="0" stopColor="#6366F1" />
-            <stop offset="1" stopColor="#7C3AED" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M9 10C9 7 12 5 16 5C21 5 24 8 24 11C24 14.5 20 15.5 16 16C12 16.5 8 17.5 8 21C8 24 11 27 16 27C20 27 23 25 23 22"
-          stroke="url(#brand-gradient)"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-        <circle cx="23" cy="22" r="2.1" fill="url(#brand-gradient)" />
+        <rect x="2" y="19" width="5" height="11" rx="2" fill="currentColor" opacity=".45" />
+        <rect x="10" y="13" width="5" height="17" rx="2" fill="currentColor" opacity=".62" />
+        <rect x="18" y="7" width="5" height="23" rx="2" fill="currentColor" opacity=".8" />
+        <rect x="26" y="2" width="5" height="28" rx="2" fill="currentColor" />
       </svg>
-      <span>SupportFlow</span>
+      <span>DataStraw</span>
     </div>
   );
 }

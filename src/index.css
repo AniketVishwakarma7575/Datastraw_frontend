@@ -113,21 +113,24 @@ tr:focus-visible {
   height: 64px;
   flex: 0 0 64px;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 0 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .brand svg {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  color: #d0d5dd;
 }
 
 .brand span {
   color: #fff;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: -0.025em;
 }
 
 .nav {
