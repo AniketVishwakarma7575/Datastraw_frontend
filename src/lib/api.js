@@ -96,12 +96,12 @@ export async function getTicket(id) {
 }
 
 export async function createTicket({ customer, email, subject, desc }) {
-  const customerName = customer.trim() || "New customer";
-  const customerEmail = email.trim() || "customer@example.com";
-  const description = desc.trim() || "No description provided.";
+  const customerName = customer.trim();
+  const customerEmail = email.trim();
+  const description = desc.trim();
 
-  if (!subject.trim()) {
-    throw new Error("Please add a subject before continuing.");
+  if (!customerName || !customerEmail || !subject.trim() || !description) {
+    throw new Error("Complete all ticket fields before continuing.");
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
     throw new Error("Enter a valid customer email address.");

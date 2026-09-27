@@ -107,13 +107,23 @@ export default function App() {
   async function handleAddNote(id, note) {
     try {
       await addTicketNote(id, note);
-      await Promise.all([refreshTickets(), refreshTicketDetail(id)]);
       toast("Note added", "Your internal note was saved to this ticket.");
-      return true;
     } catch (error) {
       toast("Couldn't add note", error.message, "error");
-      return false;
+      return { success: false, error: error.message };
     }
+
+    const refreshResults = await Promise.allSettled([refreshTickets(), refreshTicketDetail(id)]);
+    const refreshFailure = refreshResults.find((result) => result.status === "rejected");
+    if (refreshFailure) {
+      toast(
+        "Note saved, but refresh failed",
+        refreshFailure.reason instanceof Error ? refreshFailure.reason.message : "Reload the ticket to see the latest activity.",
+        "error",
+      );
+    }
+
+    return { success: true };
   }
 
   return (

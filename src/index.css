@@ -1048,6 +1048,17 @@ textarea:focus,
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
+.field input[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+  border-color: var(--error);
+}
+
+.field-error {
+  margin: -10px 0 14px;
+  color: var(--error);
+  font-size: 12px;
+}
+
 .field textarea {
   height: 80px;
   min-height: 80px;
