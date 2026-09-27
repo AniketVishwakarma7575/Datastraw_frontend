@@ -127,7 +127,12 @@ export default function App() {
   }
 
   return (
-    <AppLayout page={route.page} ticketId={route.ticketId} onNavigate={navigate}>
+    <AppLayout
+      page={route.page}
+      ticketId={route.ticketId}
+      onNavigate={navigate}
+      onCreateTicket={() => setCreateOpen(true)}
+    >
       {loading ? (
         <div className="loading-grid" aria-label="Loading tickets"><Skeleton /><Skeleton /><Skeleton /><Skeleton /></div>
       ) : route.page === "dashboard" ? (
