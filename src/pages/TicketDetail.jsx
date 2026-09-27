@@ -1,17 +1,35 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Avatar from "../components/ui/Avatar.jsx";
 import Button from "../components/ui/Button.jsx";
 import Icon from "../components/ui/Icon.jsx";
 
 export default function TicketDetail({ ticket, onBack, onStatusChange, onAddNote }) {
   const [note, setNote] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+  const [noteError, setNoteError] = useState("");
+  const submittingNote = useRef(false);
   if (!ticket) return null;
 
   async function submitNote(event) {
     event.preventDefault();
-    if (!note.trim()) return;
-    const saved = await onAddNote(ticket.id, note);
-    if (saved) setNote("");
+    if (!note.trim() || submittingNote.current) return;
+
+    submittingNote.current = true;
+    setSavingNote(true);
+    setNoteError("");
+    try {
+      const result = await onAddNote(ticket.id, note);
+      if (result.success) {
+        setNote("");
+      } else {
+        setNoteError(result.error);
+      }
+    } catch (error) {
+      setNoteError(error.message || "Could not save the note. Please try again.");
+    } finally {
+      submittingNote.current = false;
+      setSavingNote(false);
+    }
   }
 
   return (
@@ -54,8 +72,13 @@ export default function TicketDetail({ ticket, onBack, onStatusChange, onAddNote
           <form className="panel" onSubmit={submitNote}>
             <div className="composer-label">Internal note</div>
             <div className="composer-sub">Only support agents can see this.</div>
-            <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add context, investigation details, or next steps..." />
-            <div className="composer-foot"><Button type="submit">Add note →</Button></div>
+            <textarea value={note} onChange={(event) => { setNote(event.target.value); setNoteError(""); }} placeholder="Add context, investigation details, or next steps..." disabled={savingNote} />
+            {noteError && <p className="form-error" role="alert">{noteError}</p>}
+            <div className="composer-foot">
+              <Button type="submit" disabled={savingNote || !note.trim()}>
+                {savingNote ? "Saving..." : "Add note →"}
+              </Button>
+            </div>
           </form>
         </div>
         <aside>
